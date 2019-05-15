@@ -188,7 +188,6 @@ const getConsumesBySignonById = async (ctx) => {
       })
     })
   }
-  ToolUtil.prefixImgUrl(consumes.rows)
   ctx.body = HttpResult.response(HttpResult.HttpStatus.SUCCESS, { list: existPrizes, total: existPrizes.length }, 'SUCCESS')
 }
 
@@ -200,13 +199,6 @@ const bulkAddConsumes = async (ctx) => {
   }
   let signon = await signonService.getSignonById({ id: id })
   let extraText = signon.extra_text || {}
-
-  //   prizesText.prizes = [{ [number]: [{ prize_id: pid, prize_num: pnum }] }]
-  // } else if (!prizesText.prizes[0][number]) {
-  //   prizesText.prizes[0][number] = [{ prize_id: pid, prize_num: pnum }]
-  // } else {
-  //   prizesText.prizes[0][number] = prizesText.prizes[0][number].concat({ prize_id: pid, prize_num: pnum })
-
   if (!extraText.consumes) {
     extraText.consumes = [{ [date]: [{ prize_id: prid, prize_num: pnum }] }]
   } else if (!extraText.consumes[0][date]) {
@@ -229,7 +221,14 @@ const bulkDeleteConsumes = async (ctx) => {
   if (!(extraText.consumes && extraText.consumes[0] && extraText.consumes[0][date])) {
     ctx.body = HttpResult.response(HttpResult.HttpStatus.FAIL, {}, 'FAIL')
   }
-  extraText.consumes[0][date] = ToolUtil.removeDuplication(extraText.consumes[0][date], prizeIds)
+  // extraText.consumes[0][date] = ToolUtil.removeDuplication(extraText.consumes[0][date], [prid])
+  extraText.consumes[0][date].forEach((ele, index) => {
+    prizeIds.forEach(pid => {
+      if (ele.prize_id === pid) {
+        extraText.consumes[0][date].splice(index, 1)
+      }
+    })
+  })
   let res = await signonService.upDateSignonConsums({ extraText: JSON.stringify(extraText) }, { id: id })
   ctx.body = HttpResult.response(HttpResult.HttpStatus.SUCCESS, res, 'SUCCESS')
 }
